@@ -5,60 +5,93 @@ export default class Counter extends React.Component {
     constructor(props) {
         super(props)
         this.state = {
-            workmin: this.props.time,
-            playmin: 5,
-            worksec: 0,
-            playsec: 0,
-            working: true
+            min: this.props.starttime,
+            resetmin: this.props.starttime,
+            active: this.props.active,
+            sec: 0,
+            on: false,
         }
-        globalThis.second = 0
-        globalThis.minute = this.props.time;
+        this.s = 0;
+        this.m = this.props.starttime;
     }
 
     componentDidMount() {
-        this.timer = setInterval(this.tick, 1000);
+        if (this.state.active) {
+            this.timer = setInterval(this.countDown, 1000);
+            this.setState({
+                on: true
+            })
+        }
+    }
+
+    switchOver = () => {
+        this.props.toggle()
     }
 
     pauseTimer = () => {
-        clearInterval(this.timer);
+        if (this.state.on) {
+            clearInterval(this.timer);
+            this.setState({
+                on: false
+            })
+        }
     }
 
-    startTimer = () => {
-        this.timer = setInterval(this.tick, 1000);
+    resumeTimer = () => {
+        if (this.state.on == false) {
+            this.timer = setInterval(this.countDown, 1000);
+            this.setState({
+                on: true
+            })
+        }
     }
 
     resetTimer = () => {
-        clearInterval(this.timer);
-        second = 0;
-        minute = 20;
-        this.setState({
-            working: true,
-            worksec: 0,
-            workmin: 20
-        });
-    }
-
-    tick = () => {
-        second = this.state.worksec;
-        second--;
-        if (second == -1) {
-            second = 59;
-            minute--;
-            if (minute == -1) {
-                minute = this.state.working ? 5 : 20;
-            }
-        }
-        if (this.state.working) {
+        this.m = this.state.resetmin
+        this.s = 0
+        if (this.state.on == false) {
+            this.timer = setInterval(this.countDown, 1000);
             this.setState({
-                worksec: second,
-                workmin: minute,
-            });
+                on: true,
+                sec: 0,
+                min: this.m,
+                active:true
+            })
         }
         else {
             this.setState({
-                playsec: second,
-                playmin: minute,
-            });
+                min: this.m,
+                sec: 0
+            })
+        }
+    }
+
+    countDown = () => {
+        this.s -= 1;
+        if (this.s == -1) {
+            this.s = 59;
+            this.m--;
+        }
+        // we are out of time
+        if (this.m == -1) {
+            this.switchOver()
+            this.m = this.state.resetmin
+            this.s = 0
+            clearInterval(this.timer)
+            this.setState({
+                active: false,
+                on: false,
+                sec: 0,
+                min: 0
+            })
+             //call to run parent function
+        }
+        //just updating time
+        else {
+            this.setState({
+                sec: this.s,
+                min: this.m,
+            })
         }
     }
 
@@ -68,70 +101,26 @@ export default class Counter extends React.Component {
 
     render() {
         return (
-            <View style={styles.container}>
-                <Text style={styles.lineStyle}>
-                    Work Time: {this.timeText(this.state.workmin)}:{this.timeText(this.state.worksec)}
-                </Text>
-                <View style={styles.bcontainer}>
-                    <TouchableOpacity style={styles.bstyle} onPress={this.pauseTimer}>
-                        <Text style={styles.btext}>
-                            Pause
-                </Text>
-                    </TouchableOpacity >
-                    <TouchableOpacity style={styles.bstyle} onPress={this.startTimer}>
-                        <Text style={styles.btext}>
-                            Resume
-                </Text>
-                    </TouchableOpacity >
-                    <TouchableOpacity style={styles.bstyle} onPress={this.resetTimer}>
-                        <Text style={styles.btext}>
-                            Reset
-                </Text>
-
-                    </TouchableOpacity >
-                </View>
-                <Text style={styles.lineStyle}>
-                    Play Time: {this.timeText(this.state.playmin)}:{this.timeText(this.state.playsec)}
+            <View >
+                <Text style={this.state.active? styles.isOn:styles.isOff}>
+                    {this.props.type} Time: {this.timeText(this.state.min)}:{this.timeText(this.state.sec)}
                 </Text>
             </View>
         );
     }
-}
 
+}
 const styles = StyleSheet.create({
-    container: {
-        backgroundColor: '#fff',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 30,
-        height: 300
-    },
-    lineStyle: {
-        borderWidth: 0.4,
-        borderColor: 'black',
-        margin: 20,
-        padding: 20,
-        width: 170
-    },
-    bstyle: {
-        backgroundColor: '#2e9fe6',
-        padding: 5,
-        borderWidth: 0.5,
-        borderColor: 'black',
-        width: 70,
-        alignItems: 'center',
-        margin: 3,
-        height: 30
-    },
-    btext: {
-        color: 'white',
-        fontWeight: '500',
-    },
-    bcontainer: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center'
-    }
+    isOn: {
+      color: 'green',
+      fontWeight: 'bold',
+      fontSize: 18
+  },
+  isOff: {
+    color: 'red',
+    fontWeight: 'bold',
+    fontSize: 14
+}
 
 
 });
